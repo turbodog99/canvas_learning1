@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Canvas Learning 1</title>
+        <style type="text/css">
+/*
+            For the purposes of making a canvas that responds to mouse clicks, using CSS styling on the
+            canvas tag to make it 100% size isn't desirable because it stretches.  Responding to the
+            full screen events with JavaScript seems to work better.
+
+            :-webkit-full-screen {
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                top: 0px;
+                left: 0px;
+            }
+*/
+        </style>
+    </head>
+    <script type="text/javascript">
+        window.onload = load;
+        
+        var animationTimer = null;
+        var animationTimeStep = 1/30.0;
+        var xVelocity = 0.0;
+        var yVelocity = 0.0;
+        var canvas = null;
+        var ctx = null;
+        var isFullScreen = false;
+        
+        /* This function handles when we switch between full screen and windowed mode.  The canvas
+         * needs to have its size adjusted depending on where it's at.
+         */
+        function handleFullScreen() {
+            if (!isFullScreen) {
+                isFullScreen = true;
+
+                origCanvasWidth = canvas.width;
+                origCanvasHeight = canvas.height;
+
+                canvas.width = screen.width;
+                canvas.height = screen.height;
+            } else {
+                isFullScreen = false;
+
+                canvas.width = origCanvasWidth;
+                canvas.height = origCanvasHeight;
+            }
+                
+            drawScreen();
+        }
+        
+        function goFullscreen(id) {
+            // Get the element that we want to take into fullscreen mode
+            var element = document.getElementById(id);
+
+            // These function will not exist in the browsers that don't support fullscreen mode yet, 
+            // so we'll have to check to see if they're available before calling them.
+            if (element.requestFullScreen) {
+                element.requestFullScreen();
+            } else if (element.mozRequestFullScreen) {
+                // This is how to go into fullscren mode in Firefox
+                // Note the "moz" prefix, which is short for Mozilla.
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullScreen) {
+                // This is how to go into fullscreen mode in Chrome and Safari
+                // Both of those browsers are based on the Webkit project, hence the same prefix.
+                element.webkitRequestFullScreen();
+            }
+            // Hooray, now we're in fullscreen mode!
+            
+            // Since the size of the canvas changed, redraw it.
+            drawScreen();
+        }
+        
+        function drawScreen() {
+            ctx = canvas.getContext("2d");
+            
+            // Note: Firefox seems to default to setting the background to black after going fullscreen, and
+            // if you want a clean screen drawn, you'll need to fill the background at least 
+            ctx.fillStyle = "rgb(255, 255, 255)"
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.scale(canvas.width/12, canvas.height/2)
+            ctx.translate(0,1);
+
+            ctx.lineWidth = 2/canvas.height;
+
+            ctx.beginPath();
+            
+            // Draws a sine wave
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            for(var i = 0; i < 4 * Math.PI; i += 0.1) {
+                ctx.lineTo(i,Math.sin(i));
+            }
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function load() {
+            canvas = document.getElementById("my_canvas");
+            fullScreenButton = document.getElementById("full_screen_button")
+            fullScreenButton.onclick = fullScreenButtonClick;
+            canvas.onmousedown = canvasMouseDown;
+            canvas.onmouseup = canvasMouseUp;
+            canvas.onmousemove = canvasMouseMove;
+            document.onfullscreenchange = handleFullScreen;
+            document.onmozfullscreenchange = handleFullScreen;
+            document.onwebkitfullscreenchange = handleFullScreen;
+            
+            drawScreen();
+        }
+
+        function getCanvasPosition(event) {
+            var rect = canvas.getBoundingClientRect();
+
+            var x = new Number();
+            var y = new Number();
+            
+            if (event.x != undefined && event.y != undefined)
+            {
+                x = event.x;
+                y = event.y;
+            }
+            else // Firefox method to get the position
+            {
+                x = event.clientX + document.body.scrollLeft +
+                    document.documentElement.scrollLeft;
+                y = event.clientY + document.body.scrollTop +
+                    document.documentElement.scrollTop;
+                    
+                console.log("event.clientX: " + event.clientX);
+                console.log("event.clientY: " + event.clientY);
+            }
+                
+            x -= rect.left;
+            y -= rect.top;
+            
+            return { x : x, y : y };
+        }
+        
+        function canvasMouseDown(event) {
+            position = getCanvasPosition(event);
+            
+            ctx.save();
+            ctx.fillStyle = "rgb(200, 0, 0)"
+            ctx.fillRect(position.x, position.y, 55, 50);
+            ctx.restore();
+            
+            console.log("Canvas mouse down at: " + position.x + ", " + position.y);
+        }
+        
+        function canvasMouseUp() {
+            ctx.save();
+            ctx.fillStyle = "rgb(0, 200, 0)"
+            ctx.fillRect(0, 0, 55, 50);
+            ctx.restore();
+        }
+        
+        function canvasMouseMove() {
+            
+        }
+        
+        function fullScreenButtonClick() {
+            if (!isFullScreen)
+                goFullscreen("my_canvas");
+        }
+    </script>
+    <body>
+        <canvas id="my_canvas" width="300" height="300"></canvas>
+        <button id="full_screen_button">Go Fullscreen!</button>
+    </body>
+</html>
